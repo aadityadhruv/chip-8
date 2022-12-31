@@ -4,17 +4,14 @@ use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use std::time::Duration;
-
-static WIDTH : u32 = 32;
-static HEIGHT : u32 = 64;
-static SCALE : u32 = 10;
+use chip8::Chip;
 
 
 pub fn main() {
+    let chip = Chip::new();
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
-
-    let window = video_subsystem.window("CHIP-8", WIDTH * SCALE, HEIGHT * SCALE)
+    let window = video_subsystem.window("CHIP-8", chip8::WIDTH * chip8::SCALE, chip8::HEIGHT * chip8::SCALE)
         .position_centered()
         .build()
         .unwrap();
