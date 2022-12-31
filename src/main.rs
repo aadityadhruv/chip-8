@@ -4,11 +4,12 @@ use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use std::time::Duration;
+use sdl2::rect::Rect;
 use chip8::Chip;
 
 
 pub fn main() {
-    let chip = Chip::new();
+    let mut chip = Chip::new();
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
     let window = video_subsystem.window("CHIP-8", chip8::WIDTH * chip8::SCALE, chip8::HEIGHT * chip8::SCALE)
@@ -18,9 +19,6 @@ pub fn main() {
 
     let mut canvas = window.into_canvas().build().unwrap();
 
-    canvas.set_draw_color(Color::RGB(255, 255, 255));
-    canvas.clear();
-    canvas.present();
     let mut event_pump = sdl_context.event_pump().unwrap();
     'running: loop {
         for event in event_pump.poll_iter() {
@@ -33,9 +31,12 @@ pub fn main() {
             }
         }
         // The rest of the game loop goes here...
-
+        canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.clear();
+        canvas.set_draw_color(Color::RGB(255, 255, 255));
+        canvas.fill_rects(chip.render());
         canvas.present();
+
         std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
 }
