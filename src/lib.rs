@@ -1,8 +1,8 @@
 use sdl2::keyboard::Keycode;
-use sdl2::rect::Rect;
-use std::io;
-use std::io::prelude::*;
 use std::fs::File;
+use std::io::Read;
+use sdl2::rect::Rect;
+use sdl2::pixels::Color;
 
 pub const WIDTH : u32 = 32;
 pub const HEIGHT : u32 = 64;
@@ -24,7 +24,8 @@ pub struct Chip {
     sound_timer: u8, //sound timer
     keys : [Keycode; 16], //mapping keys to chip-8 input keys
     fonts : [u8; 80], //all the 16 chars that can be rendered 16 * 5
-    display:  [Rect; DISPLAY_LENGTH as usize] //the display array 
+    display:  [u16; DISPLAY_LENGTH as usize], //the display array 
+    instr: u16,                                //current exec instr
 }
 
 impl Chip {
@@ -58,7 +59,8 @@ impl Chip {
                 0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
                 0xF0, 0x80, 0xF0, 0x80, 0x80  // F
             ],
-            display: [Rect::new(0, 0, SCALE - 1, SCALE - 1); DISPLAY_LENGTH],
+            display: [0; DISPLAY_LENGTH],
+            instr: 0x0000,
         }
     }
     //initialize memory with all the starting values
@@ -80,24 +82,49 @@ impl Chip {
             start += 1;
         }
 
-        println!("{:?}", self.mem);
     }
 
     pub fn fetch(&mut self) {
-        let instr = (self.mem[self.pc as usize] << 8) | self.mem[self.pc + 1 as usize];
+        self.instr = ((self.mem[self.pc as usize] as u16) << 8) | self.mem[(self.pc + 1) as usize] as u16;
         self.pc += 2;
+    }
+    
+    pub fn execute(&mut self) {
+        let v = self.instr & 0xF000;
+        let x = self.instr & 0x0F00;
+        let y = self.instr & 0x00F0;
+        let n = self.instr & 0x000F;
+
+        match self.instr {
+
+            0x00E0 => {},
+            0x1 => {},
+            0x00E0 => {},
+            0x00E0 => {},
+            0x00E0 => {},
+            _ => {}
+        }
+
+    }
+
+    pub fn CLS_00E0(&mut self) {
+        
     }
 
     //render the current grid of pixels accounting for scale
-    pub fn render(&mut self) -> &[Rect] {
+    pub fn render(&mut self, canvas : &mut sdl2::render::WindowCanvas) {
         for idx in 0..DISPLAY_LENGTH {
             let (mut x_coord, mut y_coord) : (i32, i32) =((idx as i32 % WIDTH as i32), (idx as i32 / WIDTH as i32));
             x_coord *= SCALE as i32;
             y_coord *= SCALE as i32;
-            self.display[idx].set_x(x_coord);
-            self.display[idx].set_y(y_coord);
-
+            let rect = Rect::new(x_coord, y_coord, SCALE - 1, SCALE - 1);
+            let color = match self.display[idx] {
+                    0 => Color::RGB(0, 0, 0),
+                    1 => Color::RGB(255, 255, 255),
+                    _ => Color::RGB(0, 0, 0)
+            };
+            canvas.set_draw_color(color);
+            canvas.fill_rect(rect);
         }
-        &self.display
     }
 }
