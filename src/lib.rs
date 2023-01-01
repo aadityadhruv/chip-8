@@ -4,8 +4,8 @@ use std::io::Read;
 use sdl2::rect::Rect;
 use sdl2::pixels::Color;
 
-pub const WIDTH : u32 = 32;
-pub const HEIGHT : u32 = 64;
+pub const WIDTH : u32 = 64;
+pub const HEIGHT : u32 = 32;
 pub const SCALE : u32 = 20;
 
 //length for the array of display "pixels" where pixels are the rectangles being rendered
@@ -26,6 +26,12 @@ pub struct Chip {
     fonts : [u8; 80], //all the 16 chars that can be rendered 16 * 5
     display:  [u16; DISPLAY_LENGTH as usize], //the display array 
     instr: u16,                                //current exec instr
+    v: u8, 
+    x: u8,
+    y: u8,
+    n: u8,
+    nn: u8, 
+    nnn: u16,
 }
 
 impl Chip {
@@ -35,7 +41,7 @@ impl Chip {
             mem : [0; 4096],
             registers: [0; 16],
             index: 0,
-            pc: 0,
+            pc: 0x200,
             stack: [0; 16],
             sp: 0,
             delay_timer: 0,
@@ -61,6 +67,12 @@ impl Chip {
             ],
             display: [0; DISPLAY_LENGTH],
             instr: 0x0000,
+            v: 0,
+            x: 0,
+            y: 0,
+            n: 0,
+            nn: 0, 
+            nnn: 0,
         }
     }
     //initialize memory with all the starting values
@@ -68,6 +80,7 @@ impl Chip {
         for i in 0..80 {
             self.mem[0x50 + i] = self.fonts[i];
         }
+        println!("Init Chip: Loaded fonts!");
     }
 
     pub fn read_rom(&mut self, rom : &str) {
@@ -81,34 +94,75 @@ impl Chip {
             self.mem[start] = i;
             start += 1;
         }
-
+        println!("Loading ROM in memory!");
     }
 
     pub fn fetch(&mut self) {
         self.instr = ((self.mem[self.pc as usize] as u16) << 8) | self.mem[(self.pc + 1) as usize] as u16;
         self.pc += 2;
+        println!("Fetching next instruction: {:#06X}", self.instr);
     }
     
     pub fn execute(&mut self) {
-        let v = self.instr & 0xF000;
-        let x = self.instr & 0x0F00;
-        let y = self.instr & 0x00F0;
-        let n = self.instr & 0x000F;
+        self.v = ((self.instr & 0xF000) >> 12) as u8;
+        self.x = ((self.instr & 0x0F00) >> 8) as u8;
+        self.y = ((self.instr & 0x00F0) >> 4) as u8;
+        self.n = (self.instr & 0x000F) as u8;
+        self.nn = (self.instr & 0x00FF) as u8;
+        self.nnn = self.instr & 0x0FFF;
 
         match self.instr {
 
-            0x00E0 => {},
-            0x1 => {},
-            0x00E0 => {},
-            0x00E0 => {},
-            0x00E0 => {},
-            _ => {}
+            0x00E0 => { self.CLS_00E0() },
+            0x1000..=0x1FFF => { self.JMP_1NNN() },
+            0x6000..=0x6FFF => { self.LD_6XKK() },
+            0x7000..=0x7FFF => { self.ADD_7XKK() },
+            0xA000..=0xAFFF => { self.LD_ANNN() },
+            0xD000..=0xDFFF => { self.DRW_DXYN() },
+            _ => { println!("Doing nothing!"); }
         }
 
     }
 
-    pub fn CLS_00E0(&mut self) {
-        
+    //Clear screen
+    fn CLS_00E0(&mut self) {
+        self.display = [0; DISPLAY_LENGTH]; 
+    }
+
+    //Jump
+    fn JMP_1NNN(&mut self) {
+        self.pc = self.nnn;
+    }
+
+    //Set register VX
+    fn LD_6XKK(&mut self) {
+        self.registers[self.x as usize] = self.nn as u8;
+    }
+
+    //Add value to register VX
+    fn ADD_7XKK(&mut self) {
+        self.registers[self.x as usize] +=  self.nn as u8;
+    }
+
+    //Set index register
+    fn LD_ANNN(&mut self) {
+        self.index = self.nnn;
+    }
+
+    fn DRW_DXYN(&mut self) {
+        let x = self.registers[self.x as usize] as u32 % WIDTH;
+        let y = self.registers[self.y as usize] as u32 % HEIGHT;
+
+        println!("{}, {}, {}", x, y, self.n);
+        for i in 0..self.n  {
+           println!("#{:b}", self.mem[(self.index + i as u16) as usize] as u16);
+            println!("{}", i);
+            for j in 0..8 {
+                self.display[(((y + i as u32) * WIDTH) + x+j) as usize] ^= self.mem[(self.index + i as u16) as usize] as u16 >> j & 1;
+//                println!("{}", self.mem[(self.index + i as u16) as usize] as u16 >> j & 1);
+            }
+        }
+
     }
 
     //render the current grid of pixels accounting for scale
@@ -120,11 +174,10 @@ impl Chip {
             let rect = Rect::new(x_coord, y_coord, SCALE - 1, SCALE - 1);
             let color = match self.display[idx] {
                     0 => Color::RGB(0, 0, 0),
-                    1 => Color::RGB(255, 255, 255),
-                    _ => Color::RGB(0, 0, 0)
+                    _ => Color::RGB(255, 255, 255),
             };
             canvas.set_draw_color(color);
-            canvas.fill_rect(rect);
+            canvas.fill_rect(rect).unwrap();
         }
     }
 }
