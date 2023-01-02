@@ -113,12 +113,12 @@ impl Chip {
 
         match self.instr {
 
-            0x00E0 => { self.CLS_00E0() },
-            0x1000..=0x1FFF => { self.JMP_1NNN() },
-            0x6000..=0x6FFF => { self.LD_6XKK() },
-            0x7000..=0x7FFF => { self.ADD_7XKK() },
-            0xA000..=0xAFFF => { self.LD_ANNN() },
-            0xD000..=0xDFFF => { self.DRW_DXYN() },
+            0x00e0 => { self.cls_00e0() },
+            0x1000..=0x1fff => { self.jmp_1nnn() },
+            0x6000..=0x6fff => { self.ld_6xkk() },
+            0x7000..=0x7fff => { self.add_7xkk() },
+            0xa000..=0xafff => { self.ld_annn() },
+            0xd000..=0xdfff => { self.drw_dxyn() },
             _ => { println!("Doing nothing!"); }
         }
 
