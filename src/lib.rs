@@ -24,6 +24,7 @@ pub struct Chip {
     delay_timer: u8, //delay timer 
     sound_timer: u8, //sound timer
     keys : [Keycode; 16], //mapping keys to chip-8 input keys
+    keys_pressed : i8, //mapping keys to chip-8 input keys
     fonts : [u8; 80], //all the 16 chars that can be rendered 16 * 5
     display:  [u16; DISPLAY_LENGTH as usize], //the display array 
     instr: u16,                                //current exec instr
@@ -48,6 +49,7 @@ impl Chip {
             delay_timer: 0,
             sound_timer: 0,
             keys: [Keycode::Num1, Keycode::Num2, Keycode::Num3, Keycode::Num4, Keycode::Q, Keycode::W, Keycode::E, Keycode::R, Keycode::A, Keycode::S, Keycode::D, Keycode::F, Keycode::Z, Keycode::X, Keycode::C, Keycode::V],
+            keys_pressed : -1,
             fonts: [
                 0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
                 0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -98,6 +100,18 @@ impl Chip {
         println!("Loading ROM in memory!");
     }
 
+    pub fn clear_input(&mut self) {
+        self.keys_pressed = -1;
+    }
+    pub fn feed_input(&mut self, key : Keycode) {
+        let idx = self.keys.into_iter().position(|r| r == key);
+        let m_idx = match idx {
+            Some(v) => v as i8,
+            None =>  -1 as i8,
+        };
+        self.keys_pressed = m_idx;
+    }
+
     pub fn fetch(&mut self) {
         self.instr = ((self.mem[self.pc as usize] as u16) << 8) | self.mem[(self.pc + 1) as usize] as u16;
         self.pc += 2;
@@ -137,6 +151,17 @@ impl Chip {
             0x800e..=0x8ffe => { self.shl_8xye() }
             0xb000..=0xbfff => { self.jp_bnnn() }
             0xc000..=0xcfff => { self.rnd_cxnn() }
+            0xe09e..=0xef9e => { self.skp_ex9e() }
+            0xe0a1..=0xefa1 => { self.sknp_exa1() }
+            0xf00a..=0xff0a => { self.ld_fx0a() }
+            0xf007..=0xff07 => { self.ld_fx07() }
+            0xf015..=0xff15 => { self.ld_fx15() }
+            0xf018..=0xff18 => { self.ld_fx18() }
+            0xf01e..=0xff1e => { self.add_fx1e() }
+            0xf029..=0xff29 => { self.ld_fx29() }
+            0xf033..=0xff33 => { self.ld_fx33() }
+            0xf055..=0xff55 => { self.ld_fx55() }
+            0xf065..=0xff65 => { self.ld_fx65() }
             _ => { println!("Doing nothing!"); }
         }
 
@@ -259,6 +284,55 @@ impl Chip {
         }
     }
     fn skp_ex9e(&mut self) {
+        if self.registers[self.x] as i8 == self.keys_pressed {
+            self.pc += 2;
+        }
+    }
+    fn sknp_exa1(&mut self) {
+        if self.registers[self.x] as i8 != self.keys_pressed {
+            self.pc += 2;
+        }
+    }
+    fn ld_fx07(&mut self) {
+        self.registers[self.x] = self.delay_timer;
+    }
+    fn ld_fx15(&mut self) {
+        self.delay_timer = self.registers[self.x];
+    }
+    fn ld_fx18(&mut self) {
+        self.sound_timer = self.registers[self.x];
+    }
+    fn add_fx1e(&mut self) {
+        //TODO: Maybe check for overflow
+        self.index += self.registers[self.x] as u16;
+    }
+    fn ld_fx0a(&mut self) {
+        if self.keys_pressed == -1 {
+            self.pc -= 2;
+        }
+        else {
+            self.registers[self.x] = self.keys_pressed as u8;
+        }
+    }
+    fn ld_fx29(&mut self) {
+        self.index = 0x50 + self.registers[self.x] as u16 * 5;
+    }
+    fn ld_fx33(&mut self) {
+        let r = self.registers[self.x] as u8;
+        self.mem[self.index as usize] = r - r % 100;
+        self.mem[self.index as usize + 1] = r % 100 - r % 10;
+        self.mem[self.index as usize + 2] = r % 10;
+    }
+    fn ld_fx55(&mut self) {
+        for i in 0..16 {
+            self.mem[self.index as usize + i as usize] = self.registers[self.x + i as usize];
+        }
+    }
+    fn ld_fx65(&mut self) {
+        for i in 0..16 {
+             self.registers[self.x + i as usize] = self.mem[self.index as usize + i as usize];
+        }
+
     }
 
 

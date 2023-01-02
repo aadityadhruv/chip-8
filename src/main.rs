@@ -32,12 +32,16 @@ pub fn main() {
     let mut event_pump = sdl_context.event_pump().unwrap();
     //Main loop called 'running', checks for keyboard input and renders the display grid
     'running: loop {
+        chip.clear_input();
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit {..} |
                 Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
                     break 'running
                 },
+                Event::KeyDown { keycode : Some(key), .. } => {
+                    chip.feed_input(key);
+                }
                 _ => {}
             }
         }
