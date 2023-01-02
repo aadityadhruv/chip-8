@@ -5,8 +5,8 @@ use std::io::Read;
 use sdl2::rect::Rect;
 use sdl2::pixels::Color;
 
-pub const WIDTH : u32 = 64;
-pub const HEIGHT : u32 = 32;
+pub const WIDTH : u32 = 65;
+pub const HEIGHT : u32 = 33;
 pub const SCALE : u32 = 20;
 
 //length for the array of display "pixels" where pixels are the rectangles being rendered
@@ -115,7 +115,7 @@ impl Chip {
     pub fn fetch(&mut self) {
         self.instr = ((self.mem[self.pc as usize] as u16) << 8) | self.mem[(self.pc + 1) as usize] as u16;
         self.pc += 2;
-        println!("Fetching next instruction: {:#06X}", self.instr);
+        //println!("Fetching next instruction: {:#06X}", self.instr);
     }
     
     pub fn execute(&mut self) {
@@ -243,11 +243,9 @@ impl Chip {
         self.registers[self.x] = self.registers[self.x].wrapping_add(self.nn as u8);
     }
     fn ld_8xy0(&mut self) {
-        println!("HERE! LDL DLDLDLDLLDLD!!!");
         self.registers[self.x] = self.registers[self.y];
     }
     fn or_8xy1(&mut self) {
-        println!("HERE!!!!");
         self.registers[self.x] = self.registers[self.x] | self.registers[self.y];
     }
     fn and_8xy2(&mut self) {
@@ -257,25 +255,27 @@ impl Chip {
         self.registers[self.x] = self.registers[self.x] ^ self.registers[self.y];
     }
     fn add_8xy4(&mut self) {
-        
+        println!("Checking add");
         self.registers[self.x] = self.registers[self.x].wrapping_add(self.registers[self.y]);
         match self.registers[self.x].checked_add(self.registers[self.y]) {
-            Some(_) => { }
+            Some(_) => { self.registers[0xF] = 0; }
             None => { self.registers[0xF] = 1; }
         }
     }
     fn sub_8xy5(&mut self) {
+        println!("Checking sub1");
         self.registers[self.x] = self.registers[self.x].wrapping_sub(self.registers[self.y]);
         match self.registers[self.x].checked_sub(self.registers[self.y]) {
             Some(_) => { self.registers[0xF] = 1; }
-            None => {  }
+            None => { self.registers[0xF] = 0; }
         }
     }
     fn sub_8xy7(&mut self) {
-        self.registers[self.x] = self.registers[self.y] - self.registers[self.x];
+        println!("Checking sub2");
+        self.registers[self.x] = self.registers[self.y].wrapping_sub(self.registers[self.x]);
         match self.registers[self.y].checked_sub(self.registers[self.x]) {
             Some(_) => { self.registers[0xF] = 1; }
-            None => {  }
+            None => { self.registers[0xF] = 0; }
         }
     }
     fn shr_8xy6(&mut self) {
@@ -317,6 +317,7 @@ impl Chip {
         }
     }
     fn skp_ex9e(&mut self) {
+        println!("Same key");
         if self.registers[self.x] as i8 == self.keys_pressed {
             self.pc += 2;
         }
@@ -324,6 +325,14 @@ impl Chip {
     fn sknp_exa1(&mut self) {
         if self.registers[self.x] as i8 != self.keys_pressed {
             self.pc += 2;
+        }
+    }
+    pub fn decrement_delay_timer(&mut self) {
+        if self.delay_timer > 0 {
+            self.delay_timer -= 1;
+        }
+        if self.sound_timer > 0 {
+            self.sound_timer -= 1;
         }
     }
     fn ld_fx07(&mut self) {
@@ -355,7 +364,6 @@ impl Chip {
         self.mem[self.index as usize] = r / 100;
         self.mem[self.index as usize + 1] = r % 100 / 10;
         self.mem[self.index as usize + 2] = r % 10;
-        println!("r: {} array: {:?}", r, &self.mem[self.index as usize..self.index as usize + 3])
     }
     fn ld_fx55(&mut self) {
         for i in 0..=self.x  {

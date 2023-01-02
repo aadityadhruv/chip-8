@@ -53,6 +53,7 @@ pub fn main() {
         //choose white color 
         canvas.set_draw_color(Color::RGB(255, 255, 255));
         //render all the rectangles as white pixels on the canvas
+        chip.decrement_delay_timer();
         chip.fetch();
         chip.execute();
         chip.render(&mut canvas);
