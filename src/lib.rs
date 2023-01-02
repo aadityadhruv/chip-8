@@ -125,59 +125,63 @@ impl Chip {
     }
 
     //Clear screen
-    fn CLS_00E0(&mut self) {
+    fn cls_00e0(&mut self) {
         self.display = [0; DISPLAY_LENGTH]; 
     }
 
     //Jump
-    fn JMP_1NNN(&mut self) {
+    fn jmp_1nnn(&mut self) {
         self.pc = self.nnn;
     }
 
-    //Set register VX
-    fn LD_6XKK(&mut self) {
+    //set register vx
+    fn ld_6xkk(&mut self) {
         self.registers[self.x as usize] = self.nn as u8;
     }
 
-    //Add value to register VX
-    fn ADD_7XKK(&mut self) {
+    //add value to register vx
+    fn add_7xkk(&mut self) {
         self.registers[self.x as usize] +=  self.nn as u8;
     }
 
-    //Set index register
-    fn LD_ANNN(&mut self) {
+    //set index register
+    fn ld_annn(&mut self) {
         self.index = self.nnn;
     }
 
-    fn DRW_DXYN(&mut self) {
-        let x = self.registers[self.x as usize] as u32 % WIDTH;
-        let y = self.registers[self.y as usize] as u32 % HEIGHT;
+    //draw logic 
+    fn drw_dxyn(&mut self) {
+        let x = self.registers[self.x as usize] as u32 % WIDTH; //x-coord
+        let y = self.registers[self.y as usize] as u32 % HEIGHT; //y-coord
 
+        //TODO: Cover up for end of bounds
+        //for every row 
         for i in 0..self.n  {
-            let start_index = (((y + i as u32) * WIDTH) + x) as usize;
-            let slice = &self.display[start_index..start_index+8];
+            //for every bit (column)
             for j in 0..8 {
+                //get idx in display
                 let idx = (((y + i as u32) * WIDTH) + x+j) as usize;
-                let prev = self.display[idx];
-                self.display[idx] ^= self.mem[(self.index + i as u16) as usize] as u16 >> (7 - j) & 1;
+                //XOR the bit
+                self.display[idx] ^= self.mem[(self.index + i as u16) as usize] as u16 >> (7 - j) & 1; //7 - j for reverse bit shifting
             }
-            let start_index = (((y + i as u32) * WIDTH) + x) as usize;
-            let slice = &self.display[start_index..start_index+8];
         }
-
     }
 
     //render the current grid of pixels accounting for scale
     pub fn render(&mut self, canvas : &mut sdl2::render::WindowCanvas) {
         for idx in 0..DISPLAY_LENGTH {
-            let (mut x_coord, mut y_coord) : (i32, i32) =((idx as i32 % WIDTH as i32), (idx as i32 / WIDTH as i32));
+            let (mut x_coord, mut y_coord) : (i32, i32) =((idx as i32 % WIDTH as i32), (idx as i32 / WIDTH as i32)); //get x and y coord
+            //Change scale to specified one
             x_coord *= SCALE as i32;
             y_coord *= SCALE as i32;
+            //Draw rectangle as pixel, scale - 1 so border are seen
             let rect = Rect::new(x_coord, y_coord, SCALE - 1, SCALE - 1);
+            //Choose color of bit
             let color = match self.display[idx] {
                     0 => Color::RGB(0, 0, 0),
                     _ => Color::RGB(255, 255, 255),
             };
+            //Draw into buffer
             canvas.set_draw_color(color);
             canvas.fill_rect(rect).unwrap();
         }
