@@ -271,15 +271,16 @@ impl Chip {
     fn drw_dxyn(&mut self) {
         let x = self.registers[self.x] as u32 % WIDTH; //x-coord
         let y = self.registers[self.y] as u32 % HEIGHT; //y-coord
-        //TODO: Cover up for end of bounds
         //for every row 
         for i in 0..self.n  {
             //for every bit (column)
             for j in 0..8 {
                 //get idx in display
+                if (y + i as u32) < HEIGHT && (x + j) < WIDTH {
                 let idx = (((y + i as u32) * WIDTH) + x+j) as usize;
                 //XOR the bit
                 self.display[idx] ^= self.mem[(self.index + i as u16) as usize] as u16 >> (7 - j) & 1; //7 - j for reverse bit shifting
+                }
             }
         }
     }
