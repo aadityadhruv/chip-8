@@ -129,42 +129,72 @@ impl Chip {
         match self.instr {
 
             0x00e0 => { self.cls_00e0() },
-            0x1000..=0x1fff => { self.jmp_1nnn() },
-            0x6000..=0x6fff => { self.ld_6xkk() },
-            0x7000..=0x7fff => { self.add_7xkk() },
-            0xa000..=0xafff => { self.ld_annn() },
-            0xd000..=0xdfff => { self.drw_dxyn() },
             0x00ee => { self.ret_00ee() },
+            0x1000..=0x1fff => { self.jmp_1nnn() },
             0x2000..=0x2fff => { self.call_2nnn() },
             0x3000..=0x3fff => { self.se_3xkk() }
             0x4000..=0x4fff => { self.sne_4xkk() }
             0x5000..=0x5ff0 => { self.se_5xy0() }
+            0x6000..=0x6fff => { self.ld_6xkk() },
+            0x7000..=0x7fff => { self.add_7xkk() },
+            0x8000..=0x8ffe => { self.match_8xxk() }
             0x9000..=0x9ff0 => { self.sne_9xy0() }
-            0x8000..=0x8ff0 => { self.ld_8xy0() }
-            0x8001..=0x8ff1 => { self.or_8xy1() }
-            0x8002..=0x8ff2 => { self.and_8xy2() }
-            0x8003..=0x8ff3 => { self.xor_8xy3() }
-            0x8004..=0x8ff4 => { self.add_8xy4() }
-            0x8005..=0x8ff5 => { self.sub_8xy5() }
-            0x8006..=0x8ff6 => { self.shr_8xy6() }
-            0x8007..=0x8ff7 => { self.sub_8xy7() }
-            0x800e..=0x8ffe => { self.shl_8xye() }
+            0xa000..=0xafff => { self.ld_annn() },
             0xb000..=0xbfff => { self.jp_bnnn() }
             0xc000..=0xcfff => { self.rnd_cxnn() }
-            0xe09e..=0xef9e => { self.skp_ex9e() }
-            0xe0a1..=0xefa1 => { self.sknp_exa1() }
-            0xf00a..=0xff0a => { self.ld_fx0a() }
-            0xf007..=0xff07 => { self.ld_fx07() }
-            0xf015..=0xff15 => { self.ld_fx15() }
-            0xf018..=0xff18 => { self.ld_fx18() }
-            0xf01e..=0xff1e => { self.add_fx1e() }
-            0xf029..=0xff29 => { self.ld_fx29() }
-            0xf033..=0xff33 => { self.ld_fx33() }
-            0xf055..=0xff55 => { self.ld_fx55() }
-            0xf065..=0xff65 => { self.ld_fx65() }
+            0xd000..=0xdfff => { self.drw_dxyn() },
+            0xe000..=0xefa1 => { self.match_exxk() }
+            0xf000..=0xff65 => { self.match_fxxk() }
             _ => { println!("Doing nothing!"); }
         }
 
+    }
+//            0x8000..=0x8ff0 => { self.ld_8xy0() }
+//            0x8001..=0x8ff1 => { self.or_8xy1() }
+//            0x8002..=0x8ff2 => { self.and_8xy2() }
+//            0x8003..=0x8ff3 => { self.xor_8xy3() }
+//            0x8004..=0x8ff4 => { self.add_8xy4() }
+//            0x8005..=0x8ff5 => { self.sub_8xy5() }
+//            0x8006..=0x8ff6 => { self.shr_8xy6() }
+//            0x8007..=0x8ff7 => { self.sub_8xy7() }
+//            0x800e..=0x8ffe => { self.shl_8xye() }
+
+    fn match_fxxk(&mut self) {
+        match self.instr << 8 >> 8 {
+            0x0a => { self.ld_fx0a() }
+            0x07 => { self.ld_fx07() }
+            0x15 => { self.ld_fx15() }
+            0x18 => { self.ld_fx18() }
+            0x1e => { self.add_fx1e() }
+            0x29 => { self.ld_fx29() }
+            0x33 => { self.ld_fx33() }
+            0x55 => { self.ld_fx55() }
+            0x65 => { self.ld_fx65() }
+            _ => {}
+        }
+    }
+
+    fn match_exxk(&mut self) {
+        match self.instr << 8 >> 8 {
+            0x9e => { self.skp_ex9e() }
+            0xa1 => { self.sknp_exa1() }
+            _ => {}
+        }
+
+    }
+    fn match_8xxk(&mut self) {
+        match self.instr << 12 >> 12 {
+            0x0 => { self.ld_8xy0() }
+            0x1 => { self.or_8xy1() }
+            0x2 => { self.and_8xy2() }
+            0x3 => { self.xor_8xy3() }
+            0x4 => { self.add_8xy4() }
+            0x5 => { self.sub_8xy5() }
+            0x6 => { self.shr_8xy6() }
+            0x7 => { self.sub_8xy7() }
+            0xe => { self.shl_8xye() }
+            _ => {}
+        }
     }
 
     fn ret_00ee(&mut self) {
@@ -210,12 +240,14 @@ impl Chip {
     }
     //add value to register vx
     fn add_7xkk(&mut self) {
-        self.registers[self.x] +=  self.nn as u8;
+        self.registers[self.x] = self.registers[self.x].wrapping_add(self.nn as u8);
     }
     fn ld_8xy0(&mut self) {
+        println!("HERE! LDL DLDLDLDLLDLD!!!");
         self.registers[self.x] = self.registers[self.y];
     }
     fn or_8xy1(&mut self) {
+        println!("HERE!!!!");
         self.registers[self.x] = self.registers[self.x] | self.registers[self.y];
     }
     fn and_8xy2(&mut self) {
@@ -226,14 +258,14 @@ impl Chip {
     }
     fn add_8xy4(&mut self) {
         
-        self.registers[self.x] += self.registers[self.y];
+        self.registers[self.x] = self.registers[self.x].wrapping_add(self.registers[self.y]);
         match self.registers[self.x].checked_add(self.registers[self.y]) {
             Some(_) => { }
             None => { self.registers[0xF] = 1; }
         }
     }
     fn sub_8xy5(&mut self) {
-        self.registers[self.x] -= self.registers[self.y];
+        self.registers[self.x] = self.registers[self.x].wrapping_sub(self.registers[self.y]);
         match self.registers[self.x].checked_sub(self.registers[self.y]) {
             Some(_) => { self.registers[0xF] = 1; }
             None => {  }
@@ -320,18 +352,19 @@ impl Chip {
     }
     fn ld_fx33(&mut self) {
         let r = self.registers[self.x] as u8;
-        self.mem[self.index as usize] = r - r % 100;
-        self.mem[self.index as usize + 1] = r % 100 - r % 10;
+        self.mem[self.index as usize] = r / 100;
+        self.mem[self.index as usize + 1] = r % 100 / 10;
         self.mem[self.index as usize + 2] = r % 10;
+        println!("r: {} array: {:?}", r, &self.mem[self.index as usize..self.index as usize + 3])
     }
     fn ld_fx55(&mut self) {
-        for i in 0..16 {
-            self.mem[self.index as usize + i as usize] = self.registers[self.x + i as usize];
+        for i in 0..=self.x  {
+            self.mem[self.index as usize + i] = self.registers[i];
         }
     }
     fn ld_fx65(&mut self) {
-        for i in 0..16 {
-             self.registers[self.x + i as usize] = self.mem[self.index as usize + i as usize];
+        for i in 0..=self.x {
+             self.registers[i] = self.mem[self.index as usize + i];
         }
 
     }
@@ -345,7 +378,7 @@ impl Chip {
             x_coord *= SCALE as i32;
             y_coord *= SCALE as i32;
             //Draw rectangle as pixel, scale - 1 so border are seen
-            let rect = Rect::new(x_coord, y_coord, SCALE - 1, SCALE - 1);
+            let rect = Rect::new(x_coord, y_coord, SCALE, SCALE);
             //Choose color of bit
             let color = match self.display[idx] {
                     0 => Color::RGB(0, 0, 0),
