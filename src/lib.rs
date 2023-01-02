@@ -153,14 +153,16 @@ impl Chip {
         let x = self.registers[self.x as usize] as u32 % WIDTH;
         let y = self.registers[self.y as usize] as u32 % HEIGHT;
 
-        println!("{}, {}, {}", x, y, self.n);
         for i in 0..self.n  {
-           println!("#{:b}", self.mem[(self.index + i as u16) as usize] as u16);
-            println!("{}", i);
+            let start_index = (((y + i as u32) * WIDTH) + x) as usize;
+            let slice = &self.display[start_index..start_index+8];
             for j in 0..8 {
-                self.display[(((y + i as u32) * WIDTH) + x+j) as usize] ^= self.mem[(self.index + i as u16) as usize] as u16 >> j & 1;
-//                println!("{}", self.mem[(self.index + i as u16) as usize] as u16 >> j & 1);
+                let idx = (((y + i as u32) * WIDTH) + x+j) as usize;
+                let prev = self.display[idx];
+                self.display[idx] ^= self.mem[(self.index + i as u16) as usize] as u16 >> (7 - j) & 1;
             }
+            let start_index = (((y + i as u32) * WIDTH) + x) as usize;
+            let slice = &self.display[start_index..start_index+8];
         }
 
     }
