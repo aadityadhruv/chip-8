@@ -115,7 +115,7 @@ impl Chip {
     pub fn fetch(&mut self) {
         self.instr = ((self.mem[self.pc as usize] as u16) << 8) | self.mem[(self.pc + 1) as usize] as u16;
         self.pc += 2;
-        println!("Fetching next instruction: {:#06X}", self.instr);
+        //println!("Fetching next instruction: {:#06X}", self.instr);
     }
     
     pub fn execute(&mut self) {
@@ -145,7 +145,7 @@ impl Chip {
             0xd000..=0xdfff => { self.drw_dxyn() },
             0xe000..=0xefa1 => { self.match_exxk() }
             0xf000..=0xff65 => { self.match_fxxk() }
-            _ => { println!("Doing nothing!"); }
+            _ => { }
         }
 
     }
@@ -262,8 +262,6 @@ impl Chip {
         self.registers[self.x] = self.registers[self.x].wrapping_add(self.registers[self.y]);
     }
     fn sub_8xy5(&mut self) {
-        println!("Checking sub1");
-        println!("{}, {}", self.registers[self.x], self.registers[self.y]);
         if self.registers[self.x] > self.registers[self.y] {
             self.registers[0xF] = 1;
         }
@@ -273,7 +271,6 @@ impl Chip {
         self.registers[self.x] = self.registers[self.x].wrapping_sub(self.registers[self.y]);
     }
     fn sub_8xy7(&mut self) {
-        println!("Checking sub2");
         match self.registers[self.y].checked_sub(self.registers[self.x]) {
             Some(_) => { self.registers[0xF] = 1; }
             None => { self.registers[0xF] = 0; }
@@ -319,7 +316,6 @@ impl Chip {
         }
     }
     fn skp_ex9e(&mut self) {
-        println!("Same key");
         if self.registers[self.x] as i8 == self.keys_pressed {
             self.pc += 2;
         }

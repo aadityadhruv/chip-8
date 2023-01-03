@@ -1,8 +1,14 @@
 [package]
-name = "chip8"
+name = "chippy"
 version = "0.1.0"
+license = "MPL-2.0"
 edition = "2021"
-
+description = "Yet another Chip 8 Emulator"
+readme = "README.md"
+homepage = "https://github.com/aadityadhruv/chip-8"
+repository = "https://github.com/aadityadhruv/chip-8"
+keywords = ["emulator", "games", "graphics", "assembly"]
+categories = ["emulators"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]

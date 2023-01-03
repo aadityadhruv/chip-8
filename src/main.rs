@@ -4,7 +4,7 @@ use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use std::time::Duration;
-use chip8::Chip;
+use chippy::Chip;
 use std::env;
 
 
@@ -20,7 +20,7 @@ pub fn main() {
     //SDL initalizationa and window creation
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
-    let window = video_subsystem.window("CHIP-8", chip8::WIDTH * chip8::SCALE, chip8::HEIGHT * chip8::SCALE)
+    let window = video_subsystem.window("CHIP-8", chippy::WIDTH * chippy::SCALE, chippy::HEIGHT * chippy::SCALE)
         .position_centered()
         .build()
         .unwrap();
