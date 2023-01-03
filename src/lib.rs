@@ -115,7 +115,7 @@ impl Chip {
     pub fn fetch(&mut self) {
         self.instr = ((self.mem[self.pc as usize] as u16) << 8) | self.mem[(self.pc + 1) as usize] as u16;
         self.pc += 2;
-        //println!("Fetching next instruction: {:#06X}", self.instr);
+        println!("Fetching next instruction: {:#06X}", self.instr);
     }
     
     pub fn execute(&mut self) {
@@ -255,36 +255,38 @@ impl Chip {
         self.registers[self.x] = self.registers[self.x] ^ self.registers[self.y];
     }
     fn add_8xy4(&mut self) {
-        println!("Checking add");
-        self.registers[self.x] = self.registers[self.x].wrapping_add(self.registers[self.y]);
         match self.registers[self.x].checked_add(self.registers[self.y]) {
             Some(_) => { self.registers[0xF] = 0; }
             None => { self.registers[0xF] = 1; }
         }
+        self.registers[self.x] = self.registers[self.x].wrapping_add(self.registers[self.y]);
     }
     fn sub_8xy5(&mut self) {
         println!("Checking sub1");
-        self.registers[self.x] = self.registers[self.x].wrapping_sub(self.registers[self.y]);
-        match self.registers[self.x].checked_sub(self.registers[self.y]) {
-            Some(_) => { self.registers[0xF] = 1; }
-            None => { self.registers[0xF] = 0; }
+        println!("{}, {}", self.registers[self.x], self.registers[self.y]);
+        if self.registers[self.x] > self.registers[self.y] {
+            self.registers[0xF] = 1;
         }
+        else {
+            self.registers[0xF] = 0;
+        }
+        self.registers[self.x] = self.registers[self.x].wrapping_sub(self.registers[self.y]);
     }
     fn sub_8xy7(&mut self) {
         println!("Checking sub2");
-        self.registers[self.x] = self.registers[self.y].wrapping_sub(self.registers[self.x]);
         match self.registers[self.y].checked_sub(self.registers[self.x]) {
             Some(_) => { self.registers[0xF] = 1; }
             None => { self.registers[0xF] = 0; }
         }
+        self.registers[self.x] = self.registers[self.y].wrapping_sub(self.registers[self.x]);
     }
     fn shr_8xy6(&mut self) {
-        self.registers[self.x] = self.registers[self.y];
-        self.registers[0xF] = self.registers[self.x] << 7 & 1;
+//        self.registers[self.x] = self.registers[self.y];
+        self.registers[0xF] = self.registers[self.x] << 7 >> 7 & 1;
         self.registers[self.x] >>= 1;
     }
     fn shl_8xye(&mut self) {
-        self.registers[self.x] = self.registers[self.y];
+//        self.registers[self.x] = self.registers[self.y];
         self.registers[0xF] = self.registers[self.x] >> 7 & 1;
         self.registers[self.x] <<= 1;
     }
